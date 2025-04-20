@@ -2,6 +2,10 @@
 
 This is an interactive animation project for Chaitanya Projects Consultancy Limited featuring a customizable pixel-based text display with bouncing ball animation.
 
+## Live Demo
+
+Check out the live demo: [Name Bounce Animation](https://namebounce.netlify.app/)
+
 ## Features
 
 - Interactive animation with a bouncing ball that hits pixel text
@@ -59,6 +63,8 @@ yarn dev
 - Settings are automatically saved to localStorage
 
 ## Deployment
+
+This application is deployed on Netlify at [namebounce.netlify.app](https://namebounce.netlify.app/).
 
 This application can be deployed on Vercel, Netlify, or any other platform that supports Next.js:
 
