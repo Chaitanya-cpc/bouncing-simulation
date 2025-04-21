@@ -46,12 +46,21 @@ interface SettingsContextType {
 const SettingsContext = createContext<SettingsContextType | undefined>(undefined)
 
 // Provider component
-export const SettingsProvider = ({ children }: { children: ReactNode }) => {
-  // Try to load saved settings from localStorage or use defaults
-  const [settings, setSettings] = useState<AnimationSettings>(defaultSettings)
+interface SettingsProviderProps {
+  children: ReactNode;
+  initialSettings?: AnimationSettings;
+}
+
+export const SettingsProvider = ({ children, initialSettings }: SettingsProviderProps) => {
+  // Try to load saved settings from localStorage or use defaults or provided initialSettings
+  const [settings, setSettings] = useState<AnimationSettings>(initialSettings || defaultSettings)
   
-  // Load settings from localStorage on mount
+  // Load settings from localStorage on mount, but only if no initialSettings were provided
   useEffect(() => {
+    if (initialSettings) {
+      return; // Skip localStorage if initialSettings provided
+    }
+    
     const savedSettings = localStorage.getItem('animationSettings')
     if (savedSettings) {
       try {
@@ -60,12 +69,16 @@ export const SettingsProvider = ({ children }: { children: ReactNode }) => {
         console.error('Failed to parse saved settings:', e)
       }
     }
-  }, [])
+  }, [initialSettings])
   
-  // Save settings to localStorage whenever they change
+  // Save settings to localStorage whenever they change, but only if no initialSettings were provided
   useEffect(() => {
+    if (initialSettings) {
+      return; // Skip localStorage if initialSettings provided
+    }
+    
     localStorage.setItem('animationSettings', JSON.stringify(settings))
-  }, [settings])
+  }, [settings, initialSettings])
   
   // Update functions
   const updateColors = (colors: Partial<AnimationSettings['colors']>) => {
@@ -90,7 +103,7 @@ export const SettingsProvider = ({ children }: { children: ReactNode }) => {
   }
   
   const resetToDefaults = () => {
-    setSettings(defaultSettings)
+    setSettings(initialSettings || defaultSettings)
   }
   
   return (

@@ -41,7 +41,11 @@ const logBallEvent = (message: string) => {
   }
 };
 
-export function PromptingIsAllYouNeed() {
+export function PromptingIsAllYouNeed({ 
+  isEmbedded = false 
+}: { 
+  isEmbedded?: boolean 
+}) {
   const { settings } = useSettings()
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const pixelsRef = useRef<Pixel[]>([])
@@ -49,6 +53,12 @@ export function PromptingIsAllYouNeed() {
   const paddlesRef = useRef<Paddle[]>([])
   const scaleRef = useRef(1)
   const isZoomingRef = useRef(false)
+
+  // Only log events if not embedded
+  const logBallEventIfNotEmbedded = (message: string) => {
+    if (isEmbedded) return; // Skip logging when embedded
+    logBallEvent(message);
+  };
 
   // Handle keyboard shortcuts for zoom to prevent game reset
   useEffect(() => {
@@ -107,7 +117,7 @@ export function PromptingIsAllYouNeed() {
       const calculateWordWidth = (word: string, pixelSize: number) => {
         return (
           word.split("").reduce((width, letter) => {
-            const letterWidth = PIXEL_MAP[letter]?.[0]?.length ?? 0
+            const letterWidth = PIXEL_MAP[letter]?.length ?? 0
             return width + letterWidth * pixelSize + LETTER_SPACING * pixelSize
           }, 0) -
           LETTER_SPACING * pixelSize
@@ -247,12 +257,12 @@ export function PromptingIsAllYouNeed() {
       if (ball.y - ball.radius < 0 || ball.y + ball.radius > canvas.height) {
         ball.dy = -ball.dy
         // Log horizontal wall collision
-        logBallEvent(`Ball hit ${ball.y - ball.radius < 0 ? 'top' : 'bottom'} wall`);
+        logBallEventIfNotEmbedded(`Ball hit ${ball.y - ball.radius < 0 ? 'top' : 'bottom'} wall`);
       }
       if (ball.x - ball.radius < 0 || ball.x + ball.radius > canvas.width) {
         ball.dx = -ball.dx
         // Log vertical wall collision
-        logBallEvent(`Ball hit ${ball.x - ball.radius < 0 ? 'left' : 'right'} wall`);
+        logBallEventIfNotEmbedded(`Ball hit ${ball.x - ball.radius < 0 ? 'left' : 'right'} wall`);
       }
 
       // Check for paddle collisions
@@ -266,7 +276,7 @@ export function PromptingIsAllYouNeed() {
           ) {
             ball.dx = -ball.dx
             // Log vertical paddle collision
-            logBallEvent(`Ball hit vertical paddle ${index + 1}`);
+            logBallEventIfNotEmbedded(`Ball hit vertical paddle ${index + 1}`);
           }
         } else {
           if (
@@ -277,7 +287,7 @@ export function PromptingIsAllYouNeed() {
           ) {
             ball.dy = -ball.dy
             // Log horizontal paddle collision
-            logBallEvent(`Ball hit horizontal paddle ${index + 1}`);
+            logBallEventIfNotEmbedded(`Ball hit horizontal paddle ${index + 1}`);
           }
         }
       })
@@ -305,7 +315,7 @@ export function PromptingIsAllYouNeed() {
         ) {
           pixel.hit = true
           // Log pixel hit
-          logBallEvent(`Ball hit pixel at position (${Math.floor(pixel.x)}, ${Math.floor(pixel.y)})`);
+          logBallEventIfNotEmbedded(`Ball hit pixel at position (${Math.floor(pixel.x)}, ${Math.floor(pixel.y)})`);
           
           const centerX = pixel.x + pixel.size / 2
           const centerY = pixel.y + pixel.size / 2
@@ -353,7 +363,7 @@ export function PromptingIsAllYouNeed() {
     return () => {
       window.removeEventListener("resize", resizeCanvas)
     }
-  }, [settings]) // Add settings as a dependency
+  }, [settings, isEmbedded]) // Add isEmbedded as a dependency
 
   return (
     <canvas
