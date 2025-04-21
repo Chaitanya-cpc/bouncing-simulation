@@ -53,7 +53,10 @@ export function PromptingIsAllYouNeed({
   const paddleRef = useRef<Paddle | null>(null)
   const scaleRef = useRef(1)
   const isZoomingRef = useRef(false)
-  const [gameActive, setGameActive] = useState(true)
+  // Game states: 'idle', 'playing', 'gameOver'
+  const [gameState, setGameState] = useState<'idle' | 'playing' | 'gameOver'>('idle')
+  const [score, setScore] = useState(0)
+  const [lastScore, setLastScore] = useState(0)
 
   // Only log events if not embedded
   const logBallEventIfNotEmbedded = (message: string) => {
@@ -99,6 +102,7 @@ export function PromptingIsAllYouNeed({
     // Mouse move handler for paddle
     const handleMouseMove = (e: MouseEvent) => {
       if (!paddleRef.current) return
+      if (gameState !== 'playing') return
       const rect = canvas.getBoundingClientRect()
       const mouseX = e.clientX - rect.left
       // Clamp paddle within canvas
@@ -223,11 +227,16 @@ export function PromptingIsAllYouNeed({
         targetY: 0,
         isVertical: false,
       }
-      setGameActive(true)
+    }
+
+    const startGame = () => {
+      initializeGame()
+      setScore(0)
+      setGameState('playing')
     }
 
     const updateGame = () => {
-      if (!gameActive) return
+      if (gameState !== 'playing') return
       const ball = ballRef.current
       const paddle = paddleRef.current
       if (!paddle) return
@@ -261,11 +270,13 @@ export function PromptingIsAllYouNeed({
         // Optional: add some angle based on where it hits the paddle
         const hitPos = (ball.x - (paddle.x + paddle.width / 2)) / (paddle.width / 2)
         ball.dx += hitPos * 0.5 * settings.ballSpeed
+        setScore((prev) => prev + 1)
         logBallEventIfNotEmbedded(`Ball hit bottom paddle`);
       }
       // Game over if ball touches bottom
       if (ball.y - ball.radius > canvas.height) {
-        setGameActive(false)
+        setGameState('gameOver')
+        setLastScore(score)
         logBallEventIfNotEmbedded(`Game Over: Ball missed paddle`);
       }
       // Pixel collisions (unchanged)
@@ -307,13 +318,18 @@ export function PromptingIsAllYouNeed({
         ctx.fillStyle = settings.colors.paddle
         ctx.fillRect(paddleRef.current.x, paddleRef.current.y, paddleRef.current.width, paddleRef.current.height)
       }
+      // Draw score (top left)
+      ctx.font = `bold 24px Arial, sans-serif`
+      ctx.fillStyle = '#fff'
+      ctx.textAlign = 'left'
+      ctx.fillText(`Score: ${score}`, 24, 40)
     }
 
     let animationId: number
     const gameLoop = () => {
       updateGame()
       drawGame()
-      if (gameActive) {
+      if (gameState === 'playing') {
         animationId = requestAnimationFrame(gameLoop)
       }
     }
@@ -321,21 +337,43 @@ export function PromptingIsAllYouNeed({
     resizeCanvas()
     window.addEventListener("resize", resizeCanvas)
     canvas.addEventListener("mousemove", handleMouseMove)
-    gameLoop()
+    if (gameState === 'playing') {
+      gameLoop()
+    }
 
     return () => {
       window.removeEventListener("resize", resizeCanvas)
       canvas.removeEventListener("mousemove", handleMouseMove)
       cancelAnimationFrame(animationId)
     }
-  }, [settings, isEmbedded, gameActive])
+  }, [settings, isEmbedded, gameState, score])
 
+  // UI overlays for game state
   return (
-    <canvas
-      ref={canvasRef}
-      className="fixed top-0 left-0 w-full h-full"
-      aria-label="Interactive Animation"
-    />
+    <div style={{ width: '100vw', height: '100vh', position: 'relative' }}>
+      <canvas
+        ref={canvasRef}
+        className="fixed top-0 left-0 w-full h-full"
+        aria-label="Interactive Animation"
+        style={{ zIndex: 1 }}
+      />
+      {/* Overlay UI */}
+      {gameState === 'idle' && (
+        <div style={{ position: 'absolute', top: 0, left: 0, width: '100vw', height: '100vh', zIndex: 2, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.6)' }}>
+          <h1 style={{ color: '#fff', fontSize: 48, marginBottom: 24 }}>NameBounce Game</h1>
+          <button onClick={() => { setScore(0); setGameState('playing'); }} style={{ fontSize: 24, padding: '16px 48px', borderRadius: 8, background: '#08a281', color: '#fff', border: 'none', cursor: 'pointer', marginBottom: 16 }}>Start Game</button>
+          <div style={{ color: '#fff', fontSize: 20, marginTop: 16, opacity: 0.8 }}>Move your mouse left/right to control the paddle.<br/>Keep the ball from falling!</div>
+        </div>
+      )}
+      {gameState === 'gameOver' && (
+        <div style={{ position: 'absolute', top: 0, left: 0, width: '100vw', height: '100vh', zIndex: 2, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.7)' }}>
+          <h1 style={{ color: '#fff', fontSize: 48, marginBottom: 24 }}>Game Over</h1>
+          <div style={{ color: '#fff', fontSize: 32, marginBottom: 16 }}>Final Score: {lastScore}</div>
+          <button onClick={() => { setScore(0); setGameState('playing'); }} style={{ fontSize: 24, padding: '16px 48px', borderRadius: 8, background: '#08a281', color: '#fff', border: 'none', cursor: 'pointer', marginBottom: 16 }}>Restart</button>
+          <button onClick={() => setGameState('idle')} style={{ fontSize: 18, padding: '10px 32px', borderRadius: 8, background: '#073779', color: '#fff', border: 'none', cursor: 'pointer', marginTop: 8 }}>Back to Menu</button>
+        </div>
+      )}
+    </div>
   )
 }
 
