@@ -29,8 +29,8 @@ const defaultSettings: AnimationSettings = {
   },
   ballSpeed: 2,
   text: {
-    line1: "Welcome",
-    line2: "To My Portfolio"
+    line1: "WELCOME",
+    line2: "TO MY PORTFOLIO"
   }
 }
 
