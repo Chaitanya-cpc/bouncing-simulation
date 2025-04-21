@@ -266,6 +266,7 @@ export function PromptingIsAllYouNeed({
         ball.dy > 0
       ) {
         ball.dy = -ball.dy
+        ball.y = paddle.y - ball.radius - 1
         // Optional: add some angle based on where it hits the paddle
         const hitPos = (ball.x - (paddle.x + paddle.width / 2)) / (paddle.width / 2)
         ball.dx += hitPos * 0.5 * settings.ballSpeed
