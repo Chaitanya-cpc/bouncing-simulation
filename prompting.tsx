@@ -230,7 +230,6 @@ export function PromptingIsAllYouNeed({
     }
 
     const startGame = () => {
-      initializeGame()
       setScore(0)
       setGameState('playing')
     }
@@ -334,6 +333,7 @@ export function PromptingIsAllYouNeed({
       }
     }
 
+    // Only call initializeGame on mount and resize
     resizeCanvas()
     window.addEventListener("resize", resizeCanvas)
     canvas.addEventListener("mousemove", handleMouseMove)
