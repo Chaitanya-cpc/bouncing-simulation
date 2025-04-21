@@ -357,22 +357,101 @@ export function PromptingIsAllYouNeed({
         aria-label="Interactive Animation"
         style={{ zIndex: 1 }}
       />
-      {/* Overlay UI */}
+      {/* Subtle Start Button */}
       {gameState === 'idle' && (
-        <div style={{ position: 'absolute', top: 0, left: 0, width: '100vw', height: '100vh', zIndex: 2, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.6)' }}>
-          <h1 style={{ color: '#fff', fontSize: 48, marginBottom: 24 }}>NameBounce Game</h1>
-          <button onClick={() => { setScore(0); setGameState('playing'); }} style={{ fontSize: 24, padding: '16px 48px', borderRadius: 8, background: '#08a281', color: '#fff', border: 'none', cursor: 'pointer', marginBottom: 16 }}>Start Game</button>
-          <div style={{ color: '#fff', fontSize: 20, marginTop: 16, opacity: 0.8 }}>Move your mouse left/right to control the paddle.<br/>Keep the ball from falling!</div>
-        </div>
+        <button
+          onClick={() => { setScore(0); setGameState('playing'); }}
+          style={{
+            position: 'absolute',
+            left: '50%',
+            bottom: '7vh',
+            transform: 'translateX(-50%)',
+            padding: '18px 56px',
+            fontSize: 28,
+            borderRadius: 32,
+            background: 'rgba(8,162,129,0.85)',
+            color: '#fff',
+            border: 'none',
+            boxShadow: '0 4px 32px 0 rgba(8,162,129,0.25)',
+            cursor: 'pointer',
+            zIndex: 10,
+            opacity: 0.92,
+            transition: 'opacity 0.3s, transform 0.3s',
+            animation: 'fadeInUp 0.7s cubic-bezier(.23,1.01,.32,1)'
+          }}
+        >
+          Start
+        </button>
       )}
+      {/* Subtle Game Over Badge and Restart */}
       {gameState === 'gameOver' && (
-        <div style={{ position: 'absolute', top: 0, left: 0, width: '100vw', height: '100vh', zIndex: 2, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.7)' }}>
-          <h1 style={{ color: '#fff', fontSize: 48, marginBottom: 24 }}>Game Over</h1>
-          <div style={{ color: '#fff', fontSize: 32, marginBottom: 16 }}>Final Score: {lastScore}</div>
-          <button onClick={() => { setScore(0); setGameState('playing'); }} style={{ fontSize: 24, padding: '16px 48px', borderRadius: 8, background: '#08a281', color: '#fff', border: 'none', cursor: 'pointer', marginBottom: 16 }}>Restart</button>
-          <button onClick={() => setGameState('idle')} style={{ fontSize: 18, padding: '10px 32px', borderRadius: 8, background: '#073779', color: '#fff', border: 'none', cursor: 'pointer', marginTop: 8 }}>Back to Menu</button>
-        </div>
+        <>
+          {/* Slight dimming */}
+          <div style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            width: '100vw',
+            height: '100vh',
+            background: 'rgba(0,0,0,0.18)',
+            zIndex: 5,
+            pointerEvents: 'none',
+            transition: 'background 0.4s',
+          }} />
+          <div
+            style={{
+              position: 'absolute',
+              left: '50%',
+              top: '38%',
+              transform: 'translate(-50%, -50%)',
+              background: 'rgba(30,32,40,0.92)',
+              color: '#fff',
+              borderRadius: 32,
+              padding: '28px 48px',
+              fontSize: 32,
+              fontWeight: 600,
+              boxShadow: '0 4px 32px 0 rgba(8,162,129,0.18)',
+              zIndex: 10,
+              textAlign: 'center',
+              opacity: 0.98,
+              animation: 'fadeInScale 0.7s cubic-bezier(.23,1.01,.32,1)'
+            }}
+          >
+            <div style={{ fontSize: 22, fontWeight: 400, opacity: 0.7, marginBottom: 8, letterSpacing: 1 }}>Game Over</div>
+            <div style={{ fontSize: 36, fontWeight: 700, marginBottom: 10 }}>Score: {lastScore}</div>
+            <button
+              onClick={() => { setScore(0); setGameState('playing'); }}
+              style={{
+                marginTop: 10,
+                fontSize: 20,
+                padding: '10px 36px',
+                borderRadius: 24,
+                background: 'rgba(8,162,129,0.85)',
+                color: '#fff',
+                border: 'none',
+                boxShadow: '0 2px 12px 0 rgba(8,162,129,0.18)',
+                cursor: 'pointer',
+                opacity: 0.92,
+                transition: 'opacity 0.3s, transform 0.3s',
+                animation: 'fadeInUp 0.7s cubic-bezier(.23,1.01,.32,1)'
+              }}
+            >
+              Restart
+            </button>
+          </div>
+        </>
       )}
+      {/* Animations */}
+      <style>{`
+        @keyframes fadeInUp {
+          0% { opacity: 0; transform: translateY(40px) scale(0.98); }
+          100% { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        @keyframes fadeInScale {
+          0% { opacity: 0; transform: scale(0.92) translate(-50%, -40px); }
+          100% { opacity: 1; transform: scale(1) translate(-50%, 0); }
+        }
+      `}</style>
     </div>
   )
 }
