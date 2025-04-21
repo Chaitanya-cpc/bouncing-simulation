@@ -33,6 +33,14 @@ interface Paddle {
   isVertical: boolean
 }
 
+// Add logging for ball events
+const logBallEvent = (message: string) => {
+  // Check if the logger is available
+  if (typeof window !== 'undefined' && (window as any).actionLogger) {
+    (window as any).actionLogger.addLog(message);
+  }
+};
+
 export function PromptingIsAllYouNeed() {
   const { settings } = useSettings()
   const canvasRef = useRef<HTMLCanvasElement>(null)
@@ -40,6 +48,35 @@ export function PromptingIsAllYouNeed() {
   const ballRef = useRef<Ball>({ x: 0, y: 0, dx: 0, dy: 0, radius: 0 })
   const paddlesRef = useRef<Paddle[]>([])
   const scaleRef = useRef(1)
+  const isZoomingRef = useRef(false)
+
+  // Handle keyboard shortcuts for zoom to prevent game reset
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Check for cmd/ctrl + '+' or '-' (zoom shortcuts)
+      if ((e.metaKey || e.ctrlKey) && (e.key === '=' || e.key === '-' || e.key === '+')) {
+        isZoomingRef.current = true;
+        // We don't prevent default as we want the browser to zoom
+      }
+    };
+
+    const handleKeyUp = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && (e.key === '=' || e.key === '-' || e.key === '+')) {
+        // Set a small timeout to let the zoom finish before enabling resize handler
+        setTimeout(() => {
+          isZoomingRef.current = false;
+        }, 500);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('keyup', handleKeyUp);
+
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('keyup', handleKeyUp);
+    };
+  }, []);
 
   useEffect(() => {
     const canvas = canvasRef.current
@@ -49,6 +86,9 @@ export function PromptingIsAllYouNeed() {
     if (!ctx) return
 
     const resizeCanvas = () => {
+      // Skip resizing if we're zooming with keyboard shortcuts
+      if (isZoomingRef.current) return;
+      
       canvas.width = window.innerWidth
       canvas.height = window.innerHeight
       scaleRef.current = Math.min(canvas.width / 1000, canvas.height / 1000)
@@ -203,14 +243,20 @@ export function PromptingIsAllYouNeed() {
       ball.x += ball.dx
       ball.y += ball.dy
 
+      // Check for wall collisions
       if (ball.y - ball.radius < 0 || ball.y + ball.radius > canvas.height) {
         ball.dy = -ball.dy
+        // Log horizontal wall collision
+        logBallEvent(`Ball hit ${ball.y - ball.radius < 0 ? 'top' : 'bottom'} wall`);
       }
       if (ball.x - ball.radius < 0 || ball.x + ball.radius > canvas.width) {
         ball.dx = -ball.dx
+        // Log vertical wall collision
+        logBallEvent(`Ball hit ${ball.x - ball.radius < 0 ? 'left' : 'right'} wall`);
       }
 
-      paddles.forEach((paddle) => {
+      // Check for paddle collisions
+      paddles.forEach((paddle, index) => {
         if (paddle.isVertical) {
           if (
             ball.x - ball.radius < paddle.x + paddle.width &&
@@ -219,6 +265,8 @@ export function PromptingIsAllYouNeed() {
             ball.y < paddle.y + paddle.height
           ) {
             ball.dx = -ball.dx
+            // Log vertical paddle collision
+            logBallEvent(`Ball hit vertical paddle ${index + 1}`);
           }
         } else {
           if (
@@ -228,6 +276,8 @@ export function PromptingIsAllYouNeed() {
             ball.x < paddle.x + paddle.width
           ) {
             ball.dy = -ball.dy
+            // Log horizontal paddle collision
+            logBallEvent(`Ball hit horizontal paddle ${index + 1}`);
           }
         }
       })
@@ -244,7 +294,8 @@ export function PromptingIsAllYouNeed() {
         }
       })
 
-      pixelsRef.current.forEach((pixel) => {
+      // Check for pixel collisions
+      pixelsRef.current.forEach((pixel, index) => {
         if (
           !pixel.hit &&
           ball.x + ball.radius > pixel.x &&
@@ -253,6 +304,9 @@ export function PromptingIsAllYouNeed() {
           ball.y - ball.radius < pixel.y + pixel.size
         ) {
           pixel.hit = true
+          // Log pixel hit
+          logBallEvent(`Ball hit pixel at position (${Math.floor(pixel.x)}, ${Math.floor(pixel.y)})`);
+          
           const centerX = pixel.x + pixel.size / 2
           const centerY = pixel.y + pixel.size / 2
           if (Math.abs(ball.x - centerX) > Math.abs(ball.y - centerY)) {
@@ -261,7 +315,7 @@ export function PromptingIsAllYouNeed() {
             ball.dy = -ball.dy
           }
         }
-      })
+      });
     }
 
     const drawGame = () => {

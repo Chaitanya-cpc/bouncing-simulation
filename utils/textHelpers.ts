@@ -21,8 +21,10 @@ export const validateText = (text: string): boolean => {
  * @returns Transformed text suitable for rendering
  */
 export const prepareTextForRendering = (text: string): string => {
-  // Convert to uppercase and trim whitespace
-  let processed = text.toUpperCase().trim();
+  if (!text) return '';
+  
+  // Convert to uppercase but don't trim whitespace
+  let processed = text.toUpperCase();
   
   // Replace any unsupported characters with spaces
   processed = processed.split('').map(char => 
