@@ -1,24 +1,36 @@
-# Interactive Pixel Animation
+# Interactive Pixel Paddle Game
 
-This is an interactive animation project for Chaitanya Projects Consultancy Limited featuring a customizable pixel-based text display with bouncing ball animation.
+This project is a gamified interactive animation for Chaitanya Projects Consultancy Limited, featuring a customizable pixel-based text display and a playable paddle game with a bouncing ball.
 
 ## Live Demo
 
-Check out the live demo: [Name Bounce Animation](https://namebounce.netlify.app/)
+Check out the live demo: [Name Bounce Game](https://namebounce.netlify.app/)
 
 ## Features
 
-- Interactive animation with a bouncing ball that hits pixel text
-- Settings panel to customize:
+- Playable paddle game: keep the ball bouncing using your mouse to control the paddle
+- Game states: Start, Playing, Game Over, and Restart
+- Score counter: earn points for each successful paddle hit
+- Customizable settings:
   - Text content (first and second line)
-  - Colors (main text, hit text, ball, paddles, background)
+  - Colors (main text, hit text, ball, paddle, background)
   - Ball speed
+- Responsive design for all screen sizes
+- Settings are saved to localStorage for persistence
+- Browser zoom support without resetting the game
 - Real-time Netlify resource usage monitoring (CPU, RAM, Network)
 - Event logger sidebar to track ball interactions
-- Responsive design that works on any screen size
-- Settings are saved to localStorage for persistence
-- Browser zoom support without resetting the animation
-- Full support for spaces in text input
+
+## Game Mode
+
+### How to Play
+
+- Click "Start Game" to begin.
+- Move your mouse left/right over the game area to control the paddle at the bottom.
+- Keep the ball from falling off the bottom edge by bouncing it with the paddle.
+- Score increases by 1 for each successful paddle hit.
+- If the ball falls below the paddle, the game ends and your final score is shown.
+- Click "Restart" to play again, or "Back to Menu" to return to the start screen.
 
 ## Technologies Used
 
@@ -58,16 +70,12 @@ yarn dev
 
 ## Usage
 
-- The animation starts automatically when the page loads
-- Click the gear icon in the top-right corner to open the settings panel
-- Customize colors using the color pickers or by entering hex codes
-- Adjust ball speed with the slider
-- Change text by typing in the input fields
-- Click the icon in the top-left corner to view the event logger
-- Monitor system resources with the stats panel at the top of the screen
+- Click "Start Game" to play the paddle game
+- Move your mouse to control the paddle
+- Open the settings panel (gear icon) to customize text, colors, and ball speed
 - All changes are applied in real-time
 - Settings are automatically saved to localStorage
-- Use browser zoom (Cmd/Ctrl + +/-) without resetting the animation
+- Use browser zoom (Cmd/Ctrl + +/-) without resetting the game
 
 ## Deployment
 
