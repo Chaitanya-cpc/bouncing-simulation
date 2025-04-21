@@ -13,8 +13,12 @@ Check out the live demo: [Name Bounce Animation](https://namebounce.netlify.app/
   - Text content (first and second line)
   - Colors (main text, hit text, ball, paddles, background)
   - Ball speed
+- Real-time Netlify resource usage monitoring (CPU, RAM, Network)
+- Event logger sidebar to track ball interactions
 - Responsive design that works on any screen size
 - Settings are saved to localStorage for persistence
+- Browser zoom support without resetting the animation
+- Full support for spaces in text input
 
 ## Technologies Used
 
@@ -59,8 +63,11 @@ yarn dev
 - Customize colors using the color pickers or by entering hex codes
 - Adjust ball speed with the slider
 - Change text by typing in the input fields
+- Click the icon in the top-left corner to view the event logger
+- Monitor system resources with the stats panel at the top of the screen
 - All changes are applied in real-time
 - Settings are automatically saved to localStorage
+- Use browser zoom (Cmd/Ctrl + +/-) without resetting the animation
 
 ## Deployment
 
