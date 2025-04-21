@@ -1,10 +1,10 @@
 "use client"
 
-import React from 'react'
+import React, { Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import EmbeddableAnimation from '../../components/EmbeddableAnimation'
 
-export default function EmbedPage() {
+function EmbedPageContent() {
   const searchParams = useSearchParams()
   
   // Parse all possible parameters from URL query params
@@ -36,5 +36,13 @@ export default function EmbedPage() {
         showBorder={showBorder}
       />
     </div>
+  )
+}
+
+export default function EmbedPage() {
+  return (
+    <Suspense>
+      <EmbedPageContent />
+    </Suspense>
   )
 } 
