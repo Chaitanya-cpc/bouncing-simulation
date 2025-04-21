@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useEffect, useRef } from "react"
+import React, { useEffect, useRef, useState } from "react"
 import { useSettings } from './context/SettingsContext'
 import { PIXEL_MAP } from './utils/pixelMap'
 
@@ -50,9 +50,10 @@ export function PromptingIsAllYouNeed({
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const pixelsRef = useRef<Pixel[]>([])
   const ballRef = useRef<Ball>({ x: 0, y: 0, dx: 0, dy: 0, radius: 0 })
-  const paddlesRef = useRef<Paddle[]>([])
+  const paddleRef = useRef<Paddle | null>(null)
   const scaleRef = useRef(1)
   const isZoomingRef = useRef(false)
+  const [gameActive, setGameActive] = useState(true)
 
   // Only log events if not embedded
   const logBallEventIfNotEmbedded = (message: string) => {
@@ -95,10 +96,17 @@ export function PromptingIsAllYouNeed({
     const ctx = canvas.getContext("2d")
     if (!ctx) return
 
+    // Mouse move handler for paddle
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!paddleRef.current) return
+      const rect = canvas.getBoundingClientRect()
+      const mouseX = e.clientX - rect.left
+      // Clamp paddle within canvas
+      paddleRef.current.x = Math.max(0, Math.min(mouseX - paddleRef.current.width / 2, canvas.width - paddleRef.current.width))
+    }
+
     const resizeCanvas = () => {
-      // Skip resizing if we're zooming with keyboard shortcuts
       if (isZoomingRef.current) return;
-      
       canvas.width = window.innerWidth
       canvas.height = window.innerHeight
       scaleRef.current = Math.min(canvas.width / 1000, canvas.height / 1000)
@@ -110,7 +118,6 @@ export function PromptingIsAllYouNeed({
       const LARGE_PIXEL_SIZE = 8 * scale
       const SMALL_PIXEL_SIZE = 4 * scale
       const BALL_SPEED = settings.ballSpeed * scale
-      
       pixelsRef.current = []
       const words = [settings.text.line1, settings.text.line2]
 
@@ -195,117 +202,74 @@ export function PromptingIsAllYouNeed({
         startY += wordIndex === 0 ? largeTextHeight + spaceBetweenLines : 0
       })
 
-      // Initialize ball position near the top right corner
-      const ballStartX = canvas.width * 0.9
-      const ballStartY = canvas.height * 0.1
-
+      // Initialize ball position near the top center
+      const ballStartX = canvas.width / 2
+      const ballStartY = canvas.height * 0.2
       ballRef.current = {
         x: ballStartX,
         y: ballStartY,
-        dx: -BALL_SPEED,
+        dx: BALL_SPEED * (Math.random() > 0.5 ? 1 : -1),
         dy: BALL_SPEED,
-        radius: adjustedLargePixelSize / 2,
+        radius: LARGE_PIXEL_SIZE / 2,
       }
-
-      const paddleWidth = adjustedLargePixelSize
-      const paddleLength = 10 * adjustedLargePixelSize
-
-      paddlesRef.current = [
-        {
-          x: 0,
-          y: canvas.height / 2 - paddleLength / 2,
-          width: paddleWidth,
-          height: paddleLength,
-          targetY: canvas.height / 2 - paddleLength / 2,
-          isVertical: true,
-        },
-        {
-          x: canvas.width - paddleWidth,
-          y: canvas.height / 2 - paddleLength / 2,
-          width: paddleWidth,
-          height: paddleLength,
-          targetY: canvas.height / 2 - paddleLength / 2,
-          isVertical: true,
-        },
-        {
-          x: canvas.width / 2 - paddleLength / 2,
-          y: 0,
-          width: paddleLength,
-          height: paddleWidth,
-          targetY: canvas.width / 2 - paddleLength / 2,
-          isVertical: false,
-        },
-        {
-          x: canvas.width / 2 - paddleLength / 2,
-          y: canvas.height - paddleWidth,
-          width: paddleLength,
-          height: paddleWidth,
-          targetY: canvas.width / 2 - paddleLength / 2,
-          isVertical: false,
-        },
-      ]
+      // Single bottom paddle
+      const paddleWidth = 10 * LARGE_PIXEL_SIZE
+      const paddleHeight = LARGE_PIXEL_SIZE
+      paddleRef.current = {
+        x: (canvas.width - paddleWidth) / 2,
+        y: canvas.height - paddleHeight * 2,
+        width: paddleWidth,
+        height: paddleHeight,
+        targetY: 0,
+        isVertical: false,
+      }
+      setGameActive(true)
     }
 
     const updateGame = () => {
+      if (!gameActive) return
       const ball = ballRef.current
-      const paddles = paddlesRef.current
-
+      const paddle = paddleRef.current
+      if (!paddle) return
       ball.x += ball.dx
       ball.y += ball.dy
-
-      // Check for wall collisions
-      if (ball.y - ball.radius < 0 || ball.y + ball.radius > canvas.height) {
+      // Wall collisions (top, left, right)
+      if (ball.y - ball.radius < 0) {
         ball.dy = -ball.dy
-        // Log horizontal wall collision
-        logBallEventIfNotEmbedded(`Ball hit ${ball.y - ball.radius < 0 ? 'top' : 'bottom'} wall`);
+        ball.y = ball.radius
+        logBallEventIfNotEmbedded(`Ball hit top wall`);
       }
-      if (ball.x - ball.radius < 0 || ball.x + ball.radius > canvas.width) {
+      if (ball.x - ball.radius < 0) {
         ball.dx = -ball.dx
-        // Log vertical wall collision
-        logBallEventIfNotEmbedded(`Ball hit ${ball.x - ball.radius < 0 ? 'left' : 'right'} wall`);
+        ball.x = ball.radius
+        logBallEventIfNotEmbedded(`Ball hit left wall`);
       }
-
-      // Check for paddle collisions
-      paddles.forEach((paddle, index) => {
-        if (paddle.isVertical) {
-          if (
-            ball.x - ball.radius < paddle.x + paddle.width &&
-            ball.x + ball.radius > paddle.x &&
-            ball.y > paddle.y &&
-            ball.y < paddle.y + paddle.height
-          ) {
-            ball.dx = -ball.dx
-            // Log vertical paddle collision
-            logBallEventIfNotEmbedded(`Ball hit vertical paddle ${index + 1}`);
-          }
-        } else {
-          if (
-            ball.y - ball.radius < paddle.y + paddle.height &&
-            ball.y + ball.radius > paddle.y &&
-            ball.x > paddle.x &&
-            ball.x < paddle.x + paddle.width
-          ) {
-            ball.dy = -ball.dy
-            // Log horizontal paddle collision
-            logBallEventIfNotEmbedded(`Ball hit horizontal paddle ${index + 1}`);
-          }
-        }
-      })
-
-      paddles.forEach((paddle) => {
-        if (paddle.isVertical) {
-          paddle.targetY = ball.y - paddle.height / 2
-          paddle.targetY = Math.max(0, Math.min(canvas.height - paddle.height, paddle.targetY))
-          paddle.y += (paddle.targetY - paddle.y) * 0.1
-        } else {
-          paddle.targetY = ball.x - paddle.width / 2
-          paddle.targetY = Math.max(0, Math.min(canvas.width - paddle.width, paddle.targetY))
-          paddle.x += (paddle.targetY - paddle.x) * 0.1
-        }
-      })
-
-      // Check for pixel collisions
-      pixelsRef.current.forEach((pixel, index) => {
+      if (ball.x + ball.radius > canvas.width) {
+        ball.dx = -ball.dx
+        ball.x = canvas.width - ball.radius
+        logBallEventIfNotEmbedded(`Ball hit right wall`);
+      }
+      // Paddle collision (bottom paddle only)
+      if (
+        ball.y + ball.radius > paddle.y &&
+        ball.y - ball.radius < paddle.y + paddle.height &&
+        ball.x > paddle.x &&
+        ball.x < paddle.x + paddle.width &&
+        ball.dy > 0
+      ) {
+        ball.dy = -ball.dy
+        // Optional: add some angle based on where it hits the paddle
+        const hitPos = (ball.x - (paddle.x + paddle.width / 2)) / (paddle.width / 2)
+        ball.dx += hitPos * 0.5 * settings.ballSpeed
+        logBallEventIfNotEmbedded(`Ball hit bottom paddle`);
+      }
+      // Game over if ball touches bottom
+      if (ball.y - ball.radius > canvas.height) {
+        setGameActive(false)
+        logBallEventIfNotEmbedded(`Game Over: Ball missed paddle`);
+      }
+      // Pixel collisions (unchanged)
+      pixelsRef.current.forEach((pixel) => {
         if (
           !pixel.hit &&
           ball.x + ball.radius > pixel.x &&
@@ -314,9 +278,7 @@ export function PromptingIsAllYouNeed({
           ball.y - ball.radius < pixel.y + pixel.size
         ) {
           pixel.hit = true
-          // Log pixel hit
           logBallEventIfNotEmbedded(`Ball hit pixel at position (${Math.floor(pixel.x)}, ${Math.floor(pixel.y)})`);
-          
           const centerX = pixel.x + pixel.size / 2
           const centerY = pixel.y + pixel.size / 2
           if (Math.abs(ball.x - centerX) > Math.abs(ball.y - centerY)) {
@@ -330,40 +292,43 @@ export function PromptingIsAllYouNeed({
 
     const drawGame = () => {
       if (!ctx) return
-
       ctx.fillStyle = settings.colors.background
       ctx.fillRect(0, 0, canvas.width, canvas.height)
-
       pixelsRef.current.forEach((pixel) => {
         ctx.fillStyle = pixel.hit ? settings.colors.hit : settings.colors.main
         ctx.fillRect(pixel.x, pixel.y, pixel.size, pixel.size)
       })
-
       ctx.fillStyle = settings.colors.ball
       ctx.beginPath()
       ctx.arc(ballRef.current.x, ballRef.current.y, ballRef.current.radius, 0, Math.PI * 2)
       ctx.fill()
-
-      ctx.fillStyle = settings.colors.paddle
-      paddlesRef.current.forEach((paddle) => {
-        ctx.fillRect(paddle.x, paddle.y, paddle.width, paddle.height)
-      })
+      // Draw bottom paddle
+      if (paddleRef.current) {
+        ctx.fillStyle = settings.colors.paddle
+        ctx.fillRect(paddleRef.current.x, paddleRef.current.y, paddleRef.current.width, paddleRef.current.height)
+      }
     }
 
+    let animationId: number
     const gameLoop = () => {
       updateGame()
       drawGame()
-      requestAnimationFrame(gameLoop)
+      if (gameActive) {
+        animationId = requestAnimationFrame(gameLoop)
+      }
     }
 
     resizeCanvas()
     window.addEventListener("resize", resizeCanvas)
+    canvas.addEventListener("mousemove", handleMouseMove)
     gameLoop()
 
     return () => {
       window.removeEventListener("resize", resizeCanvas)
+      canvas.removeEventListener("mousemove", handleMouseMove)
+      cancelAnimationFrame(animationId)
     }
-  }, [settings, isEmbedded]) // Add isEmbedded as a dependency
+  }, [settings, isEmbedded, gameActive])
 
   return (
     <canvas
